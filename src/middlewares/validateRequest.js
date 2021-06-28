@@ -1,4 +1,4 @@
-const {body, param} = require('express-validator/check');
+const {body, param, query} = require('express-validator/check');
 
 function validateRequest(method) {
     switch(method) {
@@ -34,6 +34,12 @@ function validateRequest(method) {
             return [
                 body('userId', 'User Id required').exists(),
                 body('jobId', 'Job id required').exists()
+            ]
+        }
+        case 'jobSearch':{
+            return [
+                query('text', 'text must be present').exists(),
+                query('type', 'type must be one off title, desc, recruiter').isIn(['title', 'desc', 'recruiter'])
             ]
         }
     }

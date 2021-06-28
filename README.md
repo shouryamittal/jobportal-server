@@ -16,4 +16,4 @@ Routes:
     - GET /api/job/:jobId - input --> jobId, output --> job details
     - GET /api/job/:jobId/candidates - input --> jobId, output --> list of candidates
     - POST /api/job/apply - input --> userId, jobId
-    - GET /api/job/search - input --> search query = output --> set of jobs
+    - GET /api/job/search - input --> search query, type, output --> set of jobs

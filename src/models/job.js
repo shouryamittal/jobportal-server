@@ -18,7 +18,7 @@ Job.init({
             len: [10, 100]
         }
     },
-    decription: {
+    description: {
         type: DataTypes.TEXT,
         allowNull: true,
         defaultValue: ''
@@ -48,7 +48,21 @@ Job.init({
     sequelize, 
     modelName: 'job',
     timestamps: true,
-    freezeTableName: true
+    freezeTableName: true,
+    indexes: [
+        {
+            unique: false,
+            fields: ['title']
+        },
+        {
+            unique: false,
+            fields: ['postedBy']
+        },
+        {
+            type: 'FULLTEXT',
+            fields: ['description']
+        }
+    ]
 });
 
 Job.hasMany(JobSkill);
