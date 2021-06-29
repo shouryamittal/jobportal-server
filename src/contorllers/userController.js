@@ -51,7 +51,7 @@ class UserController {
             }
             const {email, password, userType} = req.body;
             let user = await User.findOne({where: {email}});
-            if(Object.keys(user || {}).length === 0 || user.userType !== userType) {
+            if(Object.keys(user || {}).length === 0 || user.userType !== parseInt(userType)) {
                 response.errs = [{msg: `No account found with this email or userType`}];
                 return res.status(NOT_FOUND).send(response);
             }

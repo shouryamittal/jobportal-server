@@ -3,7 +3,7 @@ const User = require('../contorllers/userController');
 const validateRequest = require('../middlewares/validateRequest');
 
 router
-    .post('/singup',validateRequest('signup'), User.singup)
+    .post('/signup',validateRequest('signup'), User.singup)
     .post('/login', validateRequest('login'), User.login)
 
 module.exports = router;

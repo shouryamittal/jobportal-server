@@ -78,9 +78,9 @@ class JobController {
             const jobId = req.params.jobId;
             let candidates = await JobActivity.findAll({where: {jobId}, attributes: ['userId']});
             let candidatesIds = candidates.map(candidate => {return candidate.userId});
-            let allCandidateDetails = await User.findAll({where: {userId: {[Op.in]:[candidatesIds]}}, attributes: ['firstName', 'lastName', 'email']});
+            let allCandidateDetails = await User.findAll({where: {userId: {[Op.in]:candidatesIds}}, attributes: ['firstName', 'lastName', 'email']});
             if((allCandidateDetails || []).length === 0) {
-                response.errs = [{msg: `Candidate details could not be found`}];
+                response.errs = [{msg: `No Candidates found`}];
                 return res.status(NOT_FOUND).send(response);
             }
 
@@ -88,6 +88,7 @@ class JobController {
             res.status(SUCCESS).send(response);
         }
         catch(e) {
+            // console.log(e);
             response.errs = [{msg: `${e}`}];
             res.status(SERVER_ERROR).send(response);
         }
@@ -245,7 +246,8 @@ async function findJobSkills(jobs) {
             orgName:jobs[i].companyName,
             recruiterId: jobs[i].postedBy,
             postedOn: jobs[i].postedOn,
-            requiredSkills: allSkills[i]
+            requiredSkills: allSkills[i],
+            jobId: jobs[i].id
         };
         allJobs.push(jobDetails);
     }
