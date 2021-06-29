@@ -4,11 +4,11 @@ const validateRequest = require('../middlewares/validateRequest');
 
 router
     .post('/', validateRequest('saveJob') ,Job.saveJob)
-    .get('/', Job.findAllJobs)
-    .get('/all/:userId', Job.findAllJobs)
+    .get('/all/:userId', Job.findAllJobsPosted)
     .get('/search', validateRequest('jobSearch'), Job.searchJob)
     .get('/:jobId/candidates', Job.findAllCandidates)
     .post('/apply', validateRequest('apply'), Job.applyToJob)
-    .get('/:jobId', Job.findJob)
+    .get('/all/available/:userId', Job.findAllJobsForCandidate)
+    .get('/applied/:userId', Job.findAllAppliedJobs)
 
 module.exports = router;

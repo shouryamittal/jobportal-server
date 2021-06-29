@@ -20,6 +20,19 @@ class MiscController {
         }
 
     }
+
+    static async getAllSkills(req, res) {
+        let response = new Response();
+        try {
+            let skills = await Skill.findAll({attributes:['id', 'name']});
+            response.data = skills;
+            res.status(SUCCESS).send(response);
+        }
+        catch(e) {
+            response.errs = [{msg: `${e}`}];
+            res.status(SERVER_ERROR).send(response);
+        }
+    }
 }
 
 module.exports = MiscController;

@@ -5,7 +5,7 @@ const JobSkill = require('../models/jobSkill');
 const Skill = require('../models/skill');
 const JobActivity = require('../models/jobActivity');
 const Response = require('../utils/response');
-const { SUCCESS, SERVER_ERROR, INVALID_REQ, NOT_FOUND} = require('../utils/statusCode');
+const { SUCCESS, SERVER_ERROR, INVALID_REQ} = require('../utils/statusCode');
 const User = require('../models/user');
 
 class JobController {
@@ -45,17 +45,17 @@ class JobController {
      * 
      * @param {*} req 
      * @param {*} res 
-     * @returns all jobs for a recruiter / all available jobs
+     * @returns all jobs for a recruiter
      */
-    static async findAllJobs(req, res) {
+    static async findAllJobsPosted(req, res) {
         const response = new Response();
         try {
             const userId = req.params.userId;
-            const condition = userId !==undefined ? {where: {postedBy: userId},include: JobSkill}: {include: JobSkill}
+            const condition = {where: {postedBy: userId},include: JobSkill};
             let jobs = await Job.findAll(condition);
             if((jobs || []).length === 0) {
-                response.errs = [{msg:`No job exist for the given user id`}];
-                return res.status(NOT_FOUND).send(response);
+                response.data = [];
+                return res.status(SUCCESS).send(response);
             }
             let allJobs = await findJobSkills(jobs);
             response.data = allJobs;
@@ -80,8 +80,8 @@ class JobController {
             let candidatesIds = candidates.map(candidate => {return candidate.userId});
             let allCandidateDetails = await User.findAll({where: {userId: {[Op.in]:candidatesIds}}, attributes: ['firstName', 'lastName', 'email']});
             if((allCandidateDetails || []).length === 0) {
-                response.errs = [{msg: `No Candidates found`}];
-                return res.status(NOT_FOUND).send(response);
+                response.data = [];
+                return res.status(SUCCESS).send(response);
             }
 
             response.data = allCandidateDetails;
@@ -112,7 +112,7 @@ class JobController {
             res.status(SUCCESS).send(response);
         }
         catch(e) {
-            response.errs = [{msg: `${e}`}];
+            response.errs = [{msg: `You have already applied`}];
             res.status(SERVER_ERROR).send(response);
         }
     }
@@ -178,7 +178,7 @@ class JobController {
                         }, include:JobSkill});
                 }
             }
-            allJobs = await findJobSkills(jobs);
+            let allJobs = await findJobSkills(jobs);
             response.data = allJobs;
             res.status(SUCCESS).send(response)
         }
@@ -188,41 +188,55 @@ class JobController {
         }
     }
 
-    static async findJob(req, res) {
+    /**
+     * 
+     * @param {*} req 
+     * @param {*} res 
+     * @returns list of jobs to which candidate has applied
+     */
+    static async findAllAppliedJobs(req, res) {
         const response = new Response();
         try {
-                const jobId = req.params.jobId;
-                let job = await Job.findOne({
-                    where: {id: jobId},
-                    include: JobSkill /*also fetch the associated skill ids */
-                });
-                if(!job) {
-                    response.errs = [{msg: `No job exists with given iddk`}];
-                    return res.status(NOT_FOUND).send(response);
-                }
-                let skillIds = job.jobSkills.map(skillObj => {return skillObj.skillId;});
-                // //fetching skill details
-                let skills = await Skill.findAll({
-                    where: {
-                        id: {
-                            [Op.in]: skillIds
-                        }
-                    },
-                    attributes:['name']
-                });
+            let userId = req.params.userId;
+            console.log(userId)
+            let jobIds = await findAppliedJobIds(userId);
+            console.log(jobIds)
+            let jobs = await Job.findAll({where:{id: {[Op.in]: jobIds}}, include:JobSkill});
 
-                response.data = {
-                    jobDetails: {
-                        title: job.title,
-                        description: job.description,
-                        orgName:job.companyName,
-                        recruiterId: job.postedBy,
-                        postedOn: job.postedOn,
-                        requiredSkills: skills
-                    }
-                }
-                res.status(SUCCESS).send(response);
-        }   
+            if((jobs || []).length === 0) {
+                response.data = [];
+                return res.status(SUCCESS).send(response);
+            }
+            let allJobs = await findJobSkills(jobs);
+            response.data = allJobs;
+            res.status(SUCCESS).send(response);
+        }
+        catch(e) {
+            response.errs = [{msg: `${e}`}];
+            res.status(SERVER_ERROR).send(response);
+        }
+    }
+
+    /**
+     * 
+     * @param {*} req 
+     * @param {*} res 
+     * @returns list of all jobs excluding the ones to which user has already applied.
+     */
+    static async findAllJobsForCandidate(req, res) {
+        const response = new Response();
+        try {
+            let userId = req.params.userId;
+            let appliedJobIds = await findAppliedJobIds(userId);
+            let jobs = await Job.findAll({where: {id: {[Op.notIn]: appliedJobIds}}, include: JobSkill});
+            if((jobs || []).length === 0) {
+                response.data = [];
+                return res.status(SUCCESS).send(response);
+            }
+            let allJobs = await findJobSkills(jobs);
+            response.data = allJobs;
+            res.status(SUCCESS).send(response);
+        }
         catch(e) {
             response.errs = [{msg: `${e}`}];
             res.status(SERVER_ERROR).send(response);
@@ -253,4 +267,11 @@ async function findJobSkills(jobs) {
     }
     return allJobs;
 }
+
+async function findAppliedJobIds(userId) {
+    let jobs = await JobActivity.findAll({where: {userId}, attributes:['jobId']});
+    let jobIds = jobs.map(job => job.jobId);
+    return jobIds;
+}
+
 module.exports = JobController;
